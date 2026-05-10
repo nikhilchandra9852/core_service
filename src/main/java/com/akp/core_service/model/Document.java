@@ -1,11 +1,14 @@
 package com.akp.core_service.model;
 
 
+import com.akp.core_service.utils.CustomConvertor;
+import com.pgvector.PGvector;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import org.springframework.data.jpa.convert.threeten.Jsr310JpaConverters;
 
 import java.time.LocalDateTime;
 
@@ -25,6 +28,14 @@ public class Document {
     @NonNull
     @Enumerated(EnumType.STRING)
     private Types type;
+
+    @Column(columnDefinition = "Text")
+    private String content;
+
+    @Column(columnDefinition = "vector(1024)")
+    private String embedding;
+
+    private Integer chunkIndex;
 
     private LocalDateTime creationDate;
 }
