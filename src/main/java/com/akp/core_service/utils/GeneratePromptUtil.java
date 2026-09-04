@@ -3,7 +3,7 @@ package com.akp.core_service.utils;
 public class GeneratePromptUtil {
 
 
-    public static String generatePrompt(String question,String Content){
+    public static String generatePrompt(String question,String Content,String memoryHistory){
 
         return """
                 
@@ -16,7 +16,10 @@ public class GeneratePromptUtil {
                 ---question
                 %s
                 
-                """.formatted(Content,question);
+               --- history conversion
+               %s
+                
+                """.formatted(Content,question,memoryHistory);
 
 
 

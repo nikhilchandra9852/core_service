@@ -2,6 +2,7 @@ package com.akp.core_service.service;
 
 
 import com.akp.core_service.model.Document;
+import com.akp.core_service.model.MemoryVector;
 import com.akp.core_service.model.Types;
 import com.akp.core_service.repository.DocumentRepository;
 import com.akp.core_service.utils.GeneratePromptUtil;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +28,8 @@ public class DocumentService {
     private final EmbeddingModel embeddingModel;
 
     private final ChatService chatService;
+
+    private final UserService userService;
 
 
     public List<Document> findAll() {
@@ -41,12 +46,14 @@ public class DocumentService {
             float[] vectorContent = embeddingModel.embed(getChunkStrings.get(i));
             String vector = Arrays.toString(vectorContent);
 
-            documentRepository.saveDocument(content, vector, name, i,Types.valueOf(type).name());
+            documentRepository.saveDocument(getChunkStrings.get(i), vector, name, i,Types.valueOf(type).name());
         }
         return "File is embedded and upload in the db.";
     }
 
-    public String askQuestion(String question) {
+    public String askQuestion(String question,String email,Long chatId) throws ExecutionException, InterruptedException {
+
+        CompletableFuture<List<MemoryVector>> listCompletableFuture =CompletableFuture.supplyAsync( ()-> userService.getMemoryContent(email,chatId));
 
         float[] vectorContent = embeddingModel.embed(question);
         String vector = Arrays.toString(vectorContent);
@@ -56,9 +63,27 @@ public class DocumentService {
 
         String content = document.stream().map(Document::getContent).collect(Collectors.joining("\n\n"));
 
-        String prompt = GeneratePromptUtil.generatePrompt(question,content);
 
-        return chatService.ask(prompt);
+        List<MemoryVector> memoryVectorList= listCompletableFuture.get();
+        String prompt="";
+        if(memoryVectorList==null) {
+            prompt  = GeneratePromptUtil.generatePrompt(question,content,"FirstQuestion");
+        }else {
+
+            prompt = GeneratePromptUtil.generatePrompt(question, content, listCompletableFuture.get().stream().map(MemoryVector::getContent).collect(Collectors.joining("\n\n")));
+
+        }
+        String response  = chatService.ask(prompt);
+
+
+        userService.updateMemoryContent(question, response, email, chatId);
+
+
+
+        return response;
+
+
+
 
     }
 

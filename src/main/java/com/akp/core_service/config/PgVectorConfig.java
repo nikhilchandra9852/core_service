@@ -1,8 +1,10 @@
 package com.akp.core_service.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pgvector.PGvector;
 import jakarta.annotation.PostConstruct;
 import org.postgresql.PGConnection;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
@@ -30,5 +32,10 @@ public class PgVectorConfig {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 }
